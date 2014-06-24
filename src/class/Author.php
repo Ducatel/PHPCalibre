@@ -35,38 +35,55 @@ class Author{
 		$this->keywords = array();
 		$this->link = null;
 	}
+
+	/**
+	 * Create an author from a database row
+	 * @param $calibreAuthorRow The database entry which represent an author
+	 * @return The object which represente the author in the database
+	 */
+	public static function _createFromRow($calibreAuthorRow) {
+		$author = new self();
+		$author->id = $calibreAuthorRow['id'];
+		$author->name = $calibreAuthorRow['name'];
+
+		$arrayKeyword = explode(',' , $calibreAuthorRow['sort']);
+		$author->keywords = array_map(function($item){return strtolower(trim($item));} , $arrayKeyword);
+		$author->link = $calibreAuthorRow['link'];
+		return $author;
+	}
 	
+	/**
+	 * Get the identifier of this author
+	 * @return The identifier of this author 
+	 */
 	public function getId(){
 		return $this->id;
 	}
 
-	public function setId($id){
-		$this->id = $id;
-	}
-
+	/**
+	 * Get the name of this author
+	 * @return The name of this author
+	 */
 	public function getName(){
 		return $this->name;
 	}
 
-	public function setName($name){
-		$this->name = $name;
-	}
-
+	/**
+	 * An array of keyword for finding this author
+	 * @return An array of keywords
+	 */
 	public function getKeywords(){
 		return $this->keywords;
 	}
 
-	public function setKeywords($keywords){
-		$this->keywords = $keywords;
-	}
-
+	/**
+	 * Get a link for this auhtor
+	 * @return A link
+	 */
 	public function getLink(){
 		return $this->link;
 	}
 
-	public function setLink($link){
-		$this->link = $link;
-	}
 }
 
 
