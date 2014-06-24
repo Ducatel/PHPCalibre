@@ -27,7 +27,6 @@ foreach ($authors as $author) {
 }
 echo "</table>";
 
-
-var_dump($authors->find(["Allen","Francis"]));
+var_dump($authors->find( array("Veronica ") ) );
 
 ?>

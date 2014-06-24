@@ -1,27 +1,28 @@
-﻿<?php
+<?php
 require_once('Collections.php');
-require_once('Author.php');
+require_once('Publisher.php');
 require_once('SPDO.php');
 
 
 /**
- * This class manage all authors from calibre database
+ * This class manage all Publishers from calibre database
  * @author D.Ducatel
  */
-class Authors extends Collections{
-
+class Publishers extends Collections{
+	
 	/**
 	 * {@inheritDoc}
 	 */
 	public function loadFromDatabase($calibreDatabasePath){
 
-		$sqlQuery = 'SELECT * FROM authors';
+		$sqlQuery = 'SELECT * FROM publishers';
 
 		$pdo = new SPDO($calibreDatabasePath);
 		foreach  ($pdo->query($sqlQuery) as $row)
-			$this->listOfObjects[] = Author::_createFromRow($row);	
+			$this->listOfObjects[] = Publisher::_createFromRow($row);	
 
 	}
 
 }
+
 ?>
