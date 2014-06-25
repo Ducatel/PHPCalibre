@@ -1,22 +1,16 @@
 <?php
 require_once("CalibreDatabaseObject.php");
 
-
 /**
- * Represent a Calibre Serie
+ * Represent a Calibre Tag
  * @author D.Ducatel
  */
-class Serie extends CalibreDatabaseObject{
+class Tag extends CalibreDatabaseObject{
 
 	/**
-	 * The serie's name
+	 * The tag's name
 	 */
 	private $name;
-
-	/**
-	 * An array of keywords for find this serie
-	 */
-	private $keywords;
 
 	/**
 	 * Default constructor
@@ -24,7 +18,6 @@ class Serie extends CalibreDatabaseObject{
 	public function __construct() {
 		parent::__construct();
 		$this->name = null;
-		$this->keywords = array();
 	}
 
 	/**
@@ -33,16 +26,14 @@ class Serie extends CalibreDatabaseObject{
 	 * @return The object which represente the serie in the database
 	 */
 	public static function _createFromRow($calibreSerieRow) {
-		$serie = new self();
-		$serie->id = $calibreSerieRow['id'];
-		$serie->name = $calibreSerieRow['name'];
-		$arrayKeyword = explode(',' , $calibreSerieRow['sort']);
-		$serie->keywords = array_map("stringForComparaison" , $arrayKeyword);
-		return $serie;
+		$tag = new self();
+		$tag->id = $calibreSerieRow['id'];
+		$tag->name = $calibreSerieRow['name'];
+		return $tag;
 	}
 
     /**
-     * Gets the The serie's name.
+     * Gets the The tag's name.
      *
      * @return mixed
      */
@@ -51,12 +42,12 @@ class Serie extends CalibreDatabaseObject{
     }
 
     /**
-     * Gets the An array of keywords for find this serie.
+     * Gets the An array of keywords for find this tag.
      *
      * @return mixed
      */
     public function getKeywords(){
-        return $this->keywords;
+        return array(stringForComparaison($this->name));
     }
 }
 

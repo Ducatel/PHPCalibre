@@ -1,4 +1,6 @@
 <?php
+require_once("utilsFunctions.php");
+
 
 /**
  * This is a superclass of all Calibre object connexion
@@ -32,11 +34,11 @@ abstract class Collections implements Iterator{
 	 */
 	public function find($arrayOfKeywords){
 
-		$arrayOfKeywords = array_map(array('Collections', 'stringForComparaison') , $arrayOfKeywords);
+		$arrayOfKeywords = array_map("stringForComparaison" , $arrayOfKeywords);
 		$arrayOfMatchedObject = array();
 
 		foreach  ($this as $object) {
-			$name = self::stringForComparaison($object->getName());
+			$name = stringForComparaison($object->getName());
 			foreach ($arrayOfKeywords as $keyword) {
 				if (in_array($keyword, $object->getKeywords()) || $name == $keyword){
 					$arrayOfMatchedObject[] = $object;
@@ -47,15 +49,6 @@ abstract class Collections implements Iterator{
 		}
 
 		return $arrayOfMatchedObject;
-	}
-
-	/**
-	 * This method is use for transform a string in a comparable string
-	 * @param  $str The string you want to convert
-	 * @return The converted string
-	 */
-	public static function stringForComparaison($str){
-		return strtolower(trim($str));
 	}
 
 	/**

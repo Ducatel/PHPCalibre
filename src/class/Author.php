@@ -1,16 +1,12 @@
 ﻿<?php
+require_once("CalibreDatabaseObject.php");
 
 /**
  * Represent a Calibre author
  * @author D.Ducatel
  */
-class Author{
-	
-	/**
-	 * The unique id of this author
-	 */
-	private $id;
-	
+class Author extends CalibreDatabaseObject{
+		
 	/**
 	 * The author's name
 	 */
@@ -30,16 +26,14 @@ class Author{
 	 * Default constructor
 	 */
 	public function __construct() {
-		$this->id = -1;
+		parent::__construct();
 		$this->name = null;
 		$this->keywords = array();
 		$this->link = null;
 	}
 
 	/**
-	 * Create an author from a database row
-	 * @param $calibreAuthorRow The database entry which represent an author
-	 * @return The object which represente the author in the database
+	 * {@inheritDoc}
 	 */
 	public static function _createFromRow($calibreAuthorRow) {
 		$author = new self();
@@ -47,19 +41,11 @@ class Author{
 		$author->name = $calibreAuthorRow['name'];
 
 		$arrayKeyword = explode(',' , $calibreAuthorRow['sort']);
-		$author->keywords = array_map(function($item){return strtolower(trim($item));} , $arrayKeyword);
+		$author->keywords = array_map("stringForComparaison" , $arrayKeyword);
 		$author->link = $calibreAuthorRow['link'];
 		return $author;
 	}
 	
-	/**
-	 * Get the identifier of this author
-	 * @return The identifier of this author 
-	 */
-	public function getId(){
-		return $this->id;
-	}
-
 	/**
 	 * Get the name of this author
 	 * @return The name of this author

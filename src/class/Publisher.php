@@ -1,16 +1,11 @@
 <?php
-
+require_once("CalibreDatabaseObject.php");
 
 /**
  * Represent a Calibre Publisher
  * @author D.Ducatel
  */
-class Publisher{
-
-	/**
-	 * The unique id of this publisher
-	 */
-	private $id;
+class Publisher extends CalibreDatabaseObject{
 
 	/**
 	 * The publisher's name
@@ -26,7 +21,7 @@ class Publisher{
 	 * Default constructor
 	 */
 	public function __construct() {
-		$this->id = -1;
+		parent::__construct();
 		$this->name = null;
 		$this->keywords = array();
 	}
@@ -41,28 +36,16 @@ class Publisher{
 		$publisher->id = $calibrePublisherRow['id'];
 		$publisher->name = $calibrePublisherRow['name'];
 		$arrayKeyword = explode(',' , $calibrePublisherRow['sort']);
-		$author->keywords = array_map(function($item){return strtolower(trim($item));} , $arrayKeyword);
+		$publisher->keywords = array_map("stringForComparaison" , $arrayKeyword);
 		return $publisher;
 	}
-
-
-    /**
-     * Gets the The unique id of this publisher.
-     *
-     * @return mixed
-     */
-    public function getId()
-    {
-        return $this->id;
-    }
 
     /**
      * Gets the The publisher's name.
      *
      * @return mixed
      */
-    public function getName()
-    {
+    public function getName(){
         return $this->name;
     }
 
@@ -71,8 +54,7 @@ class Publisher{
      *
      * @return mixed
      */
-    public function getKeywords()
-    {
+    public function getKeywords(){
         return $this->keywords;
     }
 }
