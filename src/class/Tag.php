@@ -21,14 +21,13 @@ class Tag extends CalibreDatabaseObject{
 	}
 
 	/**
-	 * Create an serie from a database row
-	 * @param $calibreSerieRow The database entry which represent an serie
-	 * @return The object which represente the serie in the database
+	 * {@inheritDoc}
 	 */
-	public static function _createFromRow($calibreSerieRow) {
+	public static function  _createFromRow($databasePath, $calibreObjectRow) {
 		$tag = new self();
-		$tag->id = $calibreSerieRow['id'];
-		$tag->name = $calibreSerieRow['name'];
+		$tag->id = $calibreObjectRow['id'];
+		$tag->name = $calibreObjectRow['name'];
+		$tag->databasePath = $databasePath;
 		return $tag;
 	}
 

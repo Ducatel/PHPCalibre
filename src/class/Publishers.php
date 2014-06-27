@@ -19,7 +19,7 @@ class Publishers extends Collections{
 
 		$pdo = new SPDO($calibreDatabasePath);
 		foreach  ($pdo->query($sqlQuery) as $row)
-			$this->listOfObjects[] = Publisher::_createFromRow($row);	
+			$this->listOfObjects[] = Publisher::_createFromRow($calibreDatabasePath, $row);	
 
 	}
 

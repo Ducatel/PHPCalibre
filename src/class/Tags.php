@@ -19,7 +19,7 @@ class Tags extends Collections{
 
 		$pdo = new SPDO($calibreDatabasePath);
 		foreach  ($pdo->query($sqlQuery) as $row)
-			$this->listOfObjects[] = Tag::_createFromRow($row);	
+			$this->listOfObjects[] = Tag::_createFromRow($calibreDatabasePath, $row);	
 
 	}
 

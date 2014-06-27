@@ -28,15 +28,14 @@ class Serie extends CalibreDatabaseObject{
 	}
 
 	/**
-	 * Create an serie from a database row
-	 * @param $calibreSerieRow The database entry which represent an serie
-	 * @return The object which represente the serie in the database
+	 * {@inheritDoc}
 	 */
-	public static function _createFromRow($calibreSerieRow) {
+	public static function  _createFromRow($databasePath, $calibreObjectRow) {
 		$serie = new self();
-		$serie->id = $calibreSerieRow['id'];
-		$serie->name = $calibreSerieRow['name'];
-		$arrayKeyword = explode(',' , $calibreSerieRow['sort']);
+		$serie->databasePath = $databasePath;
+		$serie->id = $calibreObjectRow['id'];
+		$serie->name = $calibreObjectRow['name'];
+		$arrayKeyword = explode(',' , $calibreObjectRow['sort']);
 		$serie->keywords = array_map("stringForComparaison" , $arrayKeyword);
 		return $serie;
 	}

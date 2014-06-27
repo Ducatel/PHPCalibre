@@ -19,7 +19,7 @@ class Authors extends Collections{
 
 		$pdo = new SPDO($calibreDatabasePath);
 		foreach  ($pdo->query($sqlQuery) as $row)
-			$this->listOfObjects[] = Author::_createFromRow($row);	
+			$this->listOfObjects[] = Author::_createFromRow($calibreDatabasePath, $row);	
 
 	}
 

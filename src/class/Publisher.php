@@ -27,15 +27,14 @@ class Publisher extends CalibreDatabaseObject{
 	}
 
 	/**
-	 * Create an publisher from a database row
-	 * @param $calibrePublisherRow The database entry which represent an publisher
-	 * @return The object which represente the publisher in the database
+	 * {@inheritDoc}
 	 */
-	public static function _createFromRow($calibrePublisherRow) {
+	public static function  _createFromRow($databasePath, $calibreObjectRow) {
 		$publisher = new self();
-		$publisher->id = $calibrePublisherRow['id'];
-		$publisher->name = $calibrePublisherRow['name'];
-		$arrayKeyword = explode(',' , $calibrePublisherRow['sort']);
+		$publisher->databasePath = $databasePath;
+		$publisher->id = $calibreObjectRow['id'];
+		$publisher->name = $calibreObjectRow['name'];
+		$arrayKeyword = explode(',' , $calibreObjectRow['sort']);
 		$publisher->keywords = array_map("stringForComparaison" , $arrayKeyword);
 		return $publisher;
 	}

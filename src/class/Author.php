@@ -35,14 +35,14 @@ class Author extends CalibreDatabaseObject{
 	/**
 	 * {@inheritDoc}
 	 */
-	public static function _createFromRow($calibreAuthorRow) {
+	public static function _createFromRow($databasePath, $calibreObjectRow) {
 		$author = new self();
-		$author->id = $calibreAuthorRow['id'];
-		$author->name = $calibreAuthorRow['name'];
-
-		$arrayKeyword = explode(',' , $calibreAuthorRow['sort']);
+		$author->databasePath = $databasePath;
+		$author->id = $calibreObjectRow['id'];
+		$author->name = $calibreObjectRow['name'];
+		$arrayKeyword = explode(',' , $calibreObjectRow['sort']);
 		$author->keywords = array_map("stringForComparaison" , $arrayKeyword);
-		$author->link = $calibreAuthorRow['link'];
+		$author->link = $calibreObjectRow['link'];
 		return $author;
 	}
 	

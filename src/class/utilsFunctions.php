@@ -10,4 +10,9 @@ function stringForComparaison($str){
 }
 
 
+function createDateFromSQliteTimestamp($sqliteTime){
+	$date = DateTime::createFromFormat ( 'Y-m-d H:i:s.uP' , $sqliteTime );
+	return($date === false) ? new DateTime() : $date;
+}
+
 ?>

@@ -19,7 +19,7 @@ class Series extends Collections{
 
 		$pdo = new SPDO($calibreDatabasePath);
 		foreach  ($pdo->query($sqlQuery) as $row)
-			$this->listOfObjects[] = Serie::_createFromRow($row);	
+			$this->listOfObjects[] = Serie::_createFromRow($calibreDatabasePath, $row);	
 
 	}
 
