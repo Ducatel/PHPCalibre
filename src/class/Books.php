@@ -15,7 +15,7 @@ class Books extends Collections{
 	 */
 	public function loadFromDatabase($calibreDatabasePath){
 
-		$sqlQuery = 'SELECT * FROM books';
+		$sqlQuery = 'SELECT * FROM books ORDER BY title';
 
 		$pdo = new SPDO($calibreDatabasePath);
 		foreach  ($pdo->query($sqlQuery) as $row)

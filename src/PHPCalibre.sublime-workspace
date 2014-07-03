@@ -4,6 +4,18 @@
 		"selected_items":
 		[
 			[
+				"Seri",
+				"Series  (class)"
+			],
+			[
+				"is_nu",
+				"is_numeric"
+			],
+			[
+				"text-",
+				"text-decoration"
+			],
+			[
 				"load",
 				"loadLang  (function)"
 			],
@@ -123,7 +135,7 @@
 			"file": "class/Authors.php",
 			"settings":
 			{
-				"buffer_size": 517,
+				"buffer_size": 531,
 				"line_ending": "Windows"
 			}
 		},
@@ -131,7 +143,7 @@
 			"file": "class/Books.php",
 			"settings":
 			{
-				"buffer_size": 880,
+				"buffer_size": 895,
 				"line_ending": "Windows"
 			}
 		},
@@ -144,10 +156,13 @@
 			}
 		},
 		{
+			"contents": "<?php\nrequire_once(\"CalibreDatabaseObject.php\");\nrequire_once(\"utilsFunctions.php\");\nrequire_once(\"SPDO.php\");\nrequire_once('Series.php');\nrequire_once('BookFile.php');\n\n/**\n * Represent a Calibre Book\n * @author D.Ducatel\n */\nclass Book extends CalibreDatabaseObject{\n		\n	/**\n	 * The Book's title\n	 */\n	private $name;\n	\n	/**\n	 * An array of keywords for find this book\n	 */\n	private $keywords;\n\n	/**\n	 * Creation date of this book in calibre database \n	 */\n	private $creationDate;\n\n	/**\n	 * Publication date of this book\n	 */\n	private $publicationDate;\n\n	/**\n	 * Last update date of this book in calibre database \n	 */\n	private $lastModified;\n\n	/**\n	 * ISBN of this book\n	 * International Standard Book Number\n	 */\n	private $isbn;\n\n	/**\n	 * LCCN of this book\n	 * Library of Congress Control Number\n	 */\n	private $lccn;\n\n	/**\n	 * Path to the book folder\n	 */\n	private $path;\n\n	/**\n	 * Link to the cover book\n	 */\n	private $coverLink;\n\n    /**\n     * The comment/summary of this book\n     */\n    private $comment;\n\n    /**\n     * The languaghe of this book\n     */\n    private $language;\n\n    /**\n     * The rating for this book\n     */\n    private $rating;\n\n    /**\n     * The collection of the serie for this book \n     */\n    private $series;\n\n    /**\n     * Array of file for this book\n     */\n    private $files;\n\n	/**\n	 * Default constructor\n	 */\n	public function __construct() {\n		parent::__construct();\n		$this->name = null;\n		$this->keywords = array();\n		$this->creationDate = new DateTime();\n		$this->publicationDate = new DateTime();\n		$this->lastModified = new DateTime();\n		$this->isbn = null;\n		$this->lccn = null;\n		$this->path = null;\n		$this->coverLink = \"\";\n        $this->comment = \"\";\n        $this->language = \"\";\n        $this->rating = 0;\n        $this->series = null;\n        $this->files = array();\n	}\n\n	/**\n	 * {@inheritDoc}\n	 */\n	public static function _createFromRow($databasePath, $calibreObjectRow){\n		$book = new self();\n        $book->databasePath = realpath($databasePath);\n		$book->id = $calibreObjectRow['id'];\n		$book->name = $calibreObjectRow['title'];\n\n		$arrayKeyword = explode(',' , $calibreObjectRow['sort']);\n		$book->keywords = array_map(\"stringForComparaison\" , $arrayKeyword);\n\n		$book->creationDate = createDateFromSQliteTimestamp( $calibreObjectRow['timestamp'] );\n		$book->publicationDate = createDateFromSQliteTimestamp( $calibreObjectRow['pubdate'] );\n		$book->lastModified = createDateFromSQliteTimestamp( $calibreObjectRow['last_modified'] );\n\n		$book->isbn = $book->loadISBN();\n		$book->lccn = $calibreObjectRow['lccn'];\n\n        $basePath = dirname($book->databasePath);\n		$book->path = realpath($basePath.'/'.$calibreObjectRow['path']);\n\n        if($calibreObjectRow['has_cover'] == 1){\n            $cover = realpath($book->path.'/cover.jpg');\n            $book->coverLink = ( file_exists($cover)) ? $cover : \"\";\n        }\n\n        $book->comment = $book->loadComment();\n        $book->language = $book->loadLang();\n        $book->rating = $book->loadRating();\n        $book->serie = $book->loadSeries();\n        $book->files = $book->loadFiles();\n		return $book;\n	}\n\n    /**\n     * Load the files of this book\n     * @return An array of files object\n     */\n    public function loadFiles(){\n\n        $files = array();\n\n        if($this->id == -1 || empty($this->databasePath))\n            return $series;\n\n        $sqlQuery = 'SELECT D.* FROM data D , books B WHERE  B.id = D.book AND B.id='.$this->id;\n\n        $pdo = new SPDO($this->databasePath);\n        foreach  ($pdo->query($sqlQuery) as $row)\n            $files[] = BookFile::_createFromRow($this->databasePath, $row); \n            \n        return $files;\n    }\n\n    /**\n     * Load the series of this book\n     * @return The series object\n     */\n    public function loadSeries(){\n        $series = new Series();\n\n        if($this->id == -1 || empty($this->databasePath))\n            return $series;\n\n        \n        $sqlQuery = 'SELECT S.* FROM books_series_link BSL, series S WHERE BSL.series= S.id and BSL.book='.$this->id;\n\n        $pdo = new SPDO($this->databasePath);\n        foreach  ($pdo->query($sqlQuery) as $row)\n            $series->add(Serie::_createFromRow($this->databasePath, $row));\n            \n        return $series;\n    }\n\n    /**\n     * Load the rating of this book\n     * @return The book rating\n     */\n    public function loadRating(){\n\n        if($this->id == -1 || empty($this->databasePath))\n            return \"\";\n\n        $sqlQuery = 'SELECT R.rating FROM books_ratings_link BRL, ratings R WHERE BRL.rating = R.id and BRL.book='.$this->id;\n\n        $rating = 0;\n        $pdo = new SPDO($this->databasePath);\n        foreach  ($pdo->query($sqlQuery) as $row)\n            $rating = $row['rating'];\n            \n        return $rating;\n\n    }\n\n    /**\n     * Load the comment of this book\n     * @return The comment or an empty string if not found\n     */\n    public function loadComment(){\n\n        if($this->id == -1 || empty($this->databasePath))\n            return \"\";\n\n        $sqlQuery = 'SELECT text FROM comments WHERE book='.$this->id;\n\n        $comment = \"\";\n        $pdo = new SPDO($this->databasePath);\n        foreach  ($pdo->query($sqlQuery) as $row)\n            $comment .= $row['text'];\n            \n        return $comment;\n    }\n\n    /**\n     * Load the language of this book\n     * @return The language or an empty string if not found\n     */\n    public function loadLang(){\n\n        if($this->id == -1 || empty($this->databasePath))\n            return \"\";\n\n        $sqlQuery = 'SELECT L.lang_code as lang FROM books_languages_link BLL, languages L WHERE BLL.lang_code = L.id AND BLL.book = '.$this->id;\n\n        $pdo = new SPDO($this->databasePath);\n        foreach  ($pdo->query($sqlQuery) as $row)\n          return $row['lang'];\n            \n        return \"\";\n    }\n\n    /**\n     * Load the ISBN for the current book\n     * @return The ISBN value or an empty string if not found\n     */\n    public function loadISBN(){\n        $sqlQuery = 'SELECT I.val FROM identifiers I , books B WHERE I.type=\"ISBN\" AND B.id = I.book AND B.id='.$this->id;\n        $pdo = new SPDO($this->databasePath);\n        foreach  ($pdo->query($sqlQuery) as $row)\n            return $row['val'];\n        return \"\";\n    }\n\n    /**\n     * Gets the The Book's title.\n     *\n     * @return mixed\n     */\n    public function getName()\n    {\n        return $this->name;\n    }\n\n    /**\n     * Gets the An array of keywords for find this book.\n     *\n     * @return mixed\n     */\n    public function getKeywords()\n    {\n        return $this->keywords;\n    }\n\n    /**\n     * Gets the Creation date of this book in calibre database.\n     *\n     * @return mixed\n     */\n    public function getCreationDate()\n    {\n        return $this->creationDate;\n    }\n\n    /**\n     * Gets the Publication date of this book.\n     *\n     * @return mixed\n     */\n    public function getPublicationDate()\n    {\n        return $this->publicationDate;\n    }\n\n    /**\n     * Gets the Last update date of this book in calibre database.\n     *\n     * @return mixed\n     */\n    public function getLastModified()\n    {\n        return $this->lastModified;\n    }\n\n    /**\n     * Gets the ISBN of this book\n     * International Standard Book Number.\n     *\n     * @return mixed\n     */\n    public function getIsbn()\n    {\n        return $this->isbn;\n    }\n\n    /**\n     * Gets the LCCN of this book\n     * Library of Congress Control Number.\n     *\n     * @return mixed\n     */\n    public function getLccn()\n    {\n        return $this->lccn;\n    }\n\n    /**\n     * Gets the Path to the book folder.\n     *\n     * @return mixed\n     */\n    public function getPath()\n    {\n        return $this->path;\n    }\n\n    /**\n     * Gets the link to the cover book\n     *\n     * @return mixed\n     */\n    public function getCover()\n    {\n        return $this->coverLink;\n    }\n\n    /**\n     * Gets the The comment/summary of this book.\n     *\n     * @return mixed\n     */\n    public function getComment()\n    {\n        return $this->comment;\n    }\n\n    /**\n     * Gets the The languaghe of this book.\n     *\n     * @return mixed\n     */\n    public function getLanguage()\n    {\n        return $this->language;\n    }\n\n    /**\n     * Gets the The rating for this book.\n     *\n     * @return mixed\n     */\n    public function getRating()\n    {\n        return $this->rating;\n    }\n\n    /**\n     * Gets the The collection of the serie for this book.\n     *\n     * @return mixed\n     */\n    public function getSeries()\n    {\n        return $this->series;\n    }\n\n    /**\n     * Gets the Link to the cover book.\n     *\n     * @return mixed\n     */\n    public function getCoverLink()\n    {\n        return $this->coverLink;\n    }\n\n    /**\n     * Gets the Array of file for this book.\n     *\n     * @return mixed\n     */\n    public function getFiles()\n    {\n        return $this->files;\n    }\n}\n\n?>",
 			"file": "class/Book.php",
+			"file_size": 9279,
+			"file_write_time": 130488645501825093,
 			"settings":
 			{
-				"buffer_size": 5419,
+				"buffer_size": 8874,
 				"line_ending": "Windows",
 				"name": "<?php"
 			}
@@ -156,7 +171,7 @@
 			"file": "test/testBookClass.php",
 			"settings":
 			{
-				"buffer_size": 1230,
+				"buffer_size": 374,
 				"line_ending": "Windows"
 			}
 		},
@@ -177,6 +192,46 @@
 			}
 		},
 		{
+			"file": "class/BookFile.php",
+			"settings":
+			{
+				"buffer_size": 1825,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "GUI/index.php",
+			"settings":
+			{
+				"buffer_size": 4987,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "GUI/downloadFile.php",
+			"settings":
+			{
+				"buffer_size": 1155,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "GUI/bookDetail.php",
+			"settings":
+			{
+				"buffer_size": 1504,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "GUI/showLocalImg.php",
+			"settings":
+			{
+				"buffer_size": 436,
+				"line_ending": "Windows"
+			}
+		},
+		{
 			"file": "class/CalibreDatabaseObject.php",
 			"settings":
 			{
@@ -188,7 +243,7 @@
 			"file": "class/Publishers.php",
 			"settings":
 			{
-				"buffer_size": 533,
+				"buffer_size": 547,
 				"line_ending": "Windows"
 			}
 		},
@@ -196,7 +251,7 @@
 			"file": "class/Tags.php",
 			"settings":
 			{
-				"buffer_size": 503,
+				"buffer_size": 517,
 				"line_ending": "Windows"
 			}
 		},
@@ -220,7 +275,7 @@
 			"file": "class/utilsFunctions.php",
 			"settings":
 			{
-				"buffer_size": 416,
+				"buffer_size": 1976,
 				"line_ending": "Windows",
 				"name": "<?php"
 			}
@@ -229,7 +284,7 @@
 			"file": "class/Collections.php",
 			"settings":
 			{
-				"buffer_size": 1973,
+				"buffer_size": 2446,
 				"line_ending": "Windows"
 			}
 		},
@@ -237,7 +292,7 @@
 			"file": "class/Series.php",
 			"settings":
 			{
-				"buffer_size": 512,
+				"buffer_size": 526,
 				"line_ending": "Windows"
 			}
 		}
@@ -245,9 +300,17 @@
 	"build_system": "Packages/CoffeeScript/CoffeeScript.sublime-build",
 	"command_palette":
 	{
-		"height": 392.0,
+		"height": 58.0,
 		"selected_items":
 		[
+			[
+				"install",
+				"Package Control: Install Package"
+			],
+			[
+				"insta",
+				"Snippet: Constant Definition"
+			],
 			[
 				"instal",
 				"Package Control: Install Package"
@@ -257,20 +320,12 @@
 				"Package Control: Install Package"
 			],
 			[
-				"install",
-				"Package Control: Install Package"
-			],
-			[
 				"pac",
 				"Package Control: List Packages"
 			],
 			[
 				"installP",
 				"Package Control: Install Package"
-			],
-			[
-				"insta",
-				"Snippet: Constant Definition"
 			],
 			[
 				"",
@@ -384,6 +439,8 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			" \";",
+			"md",
 			"password",
 			"user",
 			"newLink",
@@ -405,7 +462,7 @@
 	"groups":
 	[
 		{
-			"selected": 6,
+			"selected": 8,
 			"sheets":
 			[
 				{
@@ -413,15 +470,15 @@
 					"file": "class/Authors.php",
 					"settings":
 					{
-						"buffer_size": 517,
+						"buffer_size": 531,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								476,
-								504
+								351,
+								351
 							]
 						],
 						"settings":
@@ -544,15 +601,15 @@
 					"file": "class/Books.php",
 					"settings":
 					{
-						"buffer_size": 880,
+						"buffer_size": 895,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								331,
-								331
+								330,
+								338
 							]
 						],
 						"settings":
@@ -661,7 +718,8 @@
 							},
 							"codeintel_tooltips": "popup",
 							"sublime_auto_complete": true,
-							"syntax": "Packages/PHP/PHP.tmLanguage"
+							"syntax": "Packages/PHP/PHP.tmLanguage",
+							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
@@ -805,15 +863,15 @@
 					"file": "class/Book.php",
 					"settings":
 					{
-						"buffer_size": 5419,
+						"buffer_size": 8874,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								3461,
-								3461
+								4041,
+								4041
 							]
 						],
 						"settings":
@@ -928,7 +986,7 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 1710.0,
+						"translation.y": 1848.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
@@ -938,15 +996,15 @@
 					"file": "test/testBookClass.php",
 					"settings":
 					{
-						"buffer_size": 1230,
+						"buffer_size": 374,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								1217,
-								1217
+								207,
+								207
 							]
 						],
 						"settings":
@@ -1207,8 +1265,8 @@
 						"selection":
 						[
 							[
-								641,
-								641
+								0,
+								920
 							]
 						],
 						"settings":
@@ -1327,6 +1385,659 @@
 				},
 				{
 					"buffer": 7,
+					"file": "class/BookFile.php",
+					"settings":
+					{
+						"buffer_size": 1825,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								977,
+								977
+							]
+						],
+						"settings":
+						{
+							"codeintel": true,
+							"codeintel_config":
+							{
+								"JavaScript":
+								{
+									"codeintel_max_recursive_dir_depth": 2,
+									"codeintel_scan_files_in_project": false,
+									"javascriptExtraPaths":
+									[
+									]
+								},
+								"PHP":
+								{
+									"codeintel_max_recursive_dir_depth": 5,
+									"codeintel_scan_files_in_project": false,
+									"phpExtraPaths":
+									[
+									]
+								},
+								"Python":
+								{
+									"env":
+									{
+									}
+								}
+							},
+							"codeintel_enabled_languages":
+							[
+								"JavaScript",
+								"Mason",
+								"XBL",
+								"XUL",
+								"RHTML",
+								"SCSS",
+								"Python",
+								"HTML",
+								"Ruby",
+								"Python3",
+								"XML",
+								"Sass",
+								"XSLT",
+								"Django",
+								"HTML5",
+								"Perl",
+								"CSS",
+								"Twig",
+								"Less",
+								"Smarty",
+								"Node.js",
+								"Tcl",
+								"TemplateToolkit",
+								"PHP"
+							],
+							"codeintel_live": true,
+							"codeintel_live_enabled_languages":
+							[
+								"JavaScript",
+								"Mason",
+								"XBL",
+								"XUL",
+								"RHTML",
+								"SCSS",
+								"Python",
+								"HTML",
+								"Ruby",
+								"Python3",
+								"XML",
+								"Sass",
+								"XSLT",
+								"Django",
+								"HTML5",
+								"Perl",
+								"CSS",
+								"Twig",
+								"Less",
+								"Smarty",
+								"Node.js",
+								"Tcl",
+								"TemplateToolkit",
+								"PHP"
+							],
+							"codeintel_max_recursive_dir_depth": 10,
+							"codeintel_scan_exclude_dir":
+							{
+								"JavaScript":
+								[
+									"/build/",
+									"/min/"
+								]
+							},
+							"codeintel_scan_files_in_project": true,
+							"codeintel_selected_catalogs":
+							[
+								"PyWin32",
+								"jQuery",
+								"Rails"
+							],
+							"codeintel_snippets": true,
+							"codeintel_syntax_map":
+							{
+								"Python Django": "Python"
+							},
+							"codeintel_tooltips": "popup",
+							"sublime_auto_complete": true,
+							"syntax": "Packages/PHP/PHP.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 336.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 8,
+					"file": "GUI/index.php",
+					"settings":
+					{
+						"buffer_size": 4987,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								3245,
+								3245
+							]
+						],
+						"settings":
+						{
+							"codeintel": true,
+							"codeintel_config":
+							{
+								"JavaScript":
+								{
+									"codeintel_max_recursive_dir_depth": 2,
+									"codeintel_scan_files_in_project": false,
+									"javascriptExtraPaths":
+									[
+									]
+								},
+								"PHP":
+								{
+									"codeintel_max_recursive_dir_depth": 5,
+									"codeintel_scan_files_in_project": false,
+									"phpExtraPaths":
+									[
+									]
+								},
+								"Python":
+								{
+									"env":
+									{
+									}
+								}
+							},
+							"codeintel_enabled_languages":
+							[
+								"JavaScript",
+								"Mason",
+								"XBL",
+								"XUL",
+								"RHTML",
+								"SCSS",
+								"Python",
+								"HTML",
+								"Ruby",
+								"Python3",
+								"XML",
+								"Sass",
+								"XSLT",
+								"Django",
+								"HTML5",
+								"Perl",
+								"CSS",
+								"Twig",
+								"Less",
+								"Smarty",
+								"Node.js",
+								"Tcl",
+								"TemplateToolkit",
+								"PHP"
+							],
+							"codeintel_live": true,
+							"codeintel_live_enabled_languages":
+							[
+								"JavaScript",
+								"Mason",
+								"XBL",
+								"XUL",
+								"RHTML",
+								"SCSS",
+								"Python",
+								"HTML",
+								"Ruby",
+								"Python3",
+								"XML",
+								"Sass",
+								"XSLT",
+								"Django",
+								"HTML5",
+								"Perl",
+								"CSS",
+								"Twig",
+								"Less",
+								"Smarty",
+								"Node.js",
+								"Tcl",
+								"TemplateToolkit",
+								"PHP"
+							],
+							"codeintel_max_recursive_dir_depth": 10,
+							"codeintel_scan_exclude_dir":
+							{
+								"JavaScript":
+								[
+									"/build/",
+									"/min/"
+								]
+							},
+							"codeintel_scan_files_in_project": true,
+							"codeintel_selected_catalogs":
+							[
+								"PyWin32",
+								"jQuery",
+								"Rails"
+							],
+							"codeintel_snippets": true,
+							"codeintel_syntax_map":
+							{
+								"Python Django": "Python"
+							},
+							"codeintel_tooltips": "popup",
+							"sublime_auto_complete": true,
+							"syntax": "Packages/PHP/PHP.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 546.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 9,
+					"file": "GUI/downloadFile.php",
+					"settings":
+					{
+						"buffer_size": 1155,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								186,
+								186
+							]
+						],
+						"settings":
+						{
+							"codeintel": true,
+							"codeintel_config":
+							{
+								"JavaScript":
+								{
+									"codeintel_max_recursive_dir_depth": 2,
+									"codeintel_scan_files_in_project": false,
+									"javascriptExtraPaths":
+									[
+									]
+								},
+								"PHP":
+								{
+									"codeintel_max_recursive_dir_depth": 5,
+									"codeintel_scan_files_in_project": false,
+									"phpExtraPaths":
+									[
+									]
+								},
+								"Python":
+								{
+									"env":
+									{
+									}
+								}
+							},
+							"codeintel_enabled_languages":
+							[
+								"JavaScript",
+								"Mason",
+								"XBL",
+								"XUL",
+								"RHTML",
+								"SCSS",
+								"Python",
+								"HTML",
+								"Ruby",
+								"Python3",
+								"XML",
+								"Sass",
+								"XSLT",
+								"Django",
+								"HTML5",
+								"Perl",
+								"CSS",
+								"Twig",
+								"Less",
+								"Smarty",
+								"Node.js",
+								"Tcl",
+								"TemplateToolkit",
+								"PHP"
+							],
+							"codeintel_live": true,
+							"codeintel_live_enabled_languages":
+							[
+								"JavaScript",
+								"Mason",
+								"XBL",
+								"XUL",
+								"RHTML",
+								"SCSS",
+								"Python",
+								"HTML",
+								"Ruby",
+								"Python3",
+								"XML",
+								"Sass",
+								"XSLT",
+								"Django",
+								"HTML5",
+								"Perl",
+								"CSS",
+								"Twig",
+								"Less",
+								"Smarty",
+								"Node.js",
+								"Tcl",
+								"TemplateToolkit",
+								"PHP"
+							],
+							"codeintel_max_recursive_dir_depth": 10,
+							"codeintel_scan_exclude_dir":
+							{
+								"JavaScript":
+								[
+									"/build/",
+									"/min/"
+								]
+							},
+							"codeintel_scan_files_in_project": true,
+							"codeintel_selected_catalogs":
+							[
+								"PyWin32",
+								"jQuery",
+								"Rails"
+							],
+							"codeintel_snippets": true,
+							"codeintel_syntax_map":
+							{
+								"Python Django": "Python"
+							},
+							"codeintel_tooltips": "popup",
+							"sublime_auto_complete": true,
+							"syntax": "Packages/PHP/PHP.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 10,
+					"file": "GUI/bookDetail.php",
+					"settings":
+					{
+						"buffer_size": 1504,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								62,
+								6
+							]
+						],
+						"settings":
+						{
+							"auto_name": "",
+							"codeintel": true,
+							"codeintel_config":
+							{
+								"JavaScript":
+								{
+									"codeintel_max_recursive_dir_depth": 2,
+									"codeintel_scan_files_in_project": false,
+									"javascriptExtraPaths":
+									[
+									]
+								},
+								"PHP":
+								{
+									"codeintel_max_recursive_dir_depth": 5,
+									"codeintel_scan_files_in_project": false,
+									"phpExtraPaths":
+									[
+									]
+								},
+								"Python":
+								{
+									"env":
+									{
+									}
+								}
+							},
+							"codeintel_enabled_languages":
+							[
+								"JavaScript",
+								"Mason",
+								"XBL",
+								"XUL",
+								"RHTML",
+								"SCSS",
+								"Python",
+								"HTML",
+								"Ruby",
+								"Python3",
+								"XML",
+								"Sass",
+								"XSLT",
+								"Django",
+								"HTML5",
+								"Perl",
+								"CSS",
+								"Twig",
+								"Less",
+								"Smarty",
+								"Node.js",
+								"Tcl",
+								"TemplateToolkit",
+								"PHP"
+							],
+							"codeintel_live": true,
+							"codeintel_live_enabled_languages":
+							[
+								"JavaScript",
+								"Mason",
+								"XBL",
+								"XUL",
+								"RHTML",
+								"SCSS",
+								"Python",
+								"HTML",
+								"Ruby",
+								"Python3",
+								"XML",
+								"Sass",
+								"XSLT",
+								"Django",
+								"HTML5",
+								"Perl",
+								"CSS",
+								"Twig",
+								"Less",
+								"Smarty",
+								"Node.js",
+								"Tcl",
+								"TemplateToolkit",
+								"PHP"
+							],
+							"codeintel_max_recursive_dir_depth": 10,
+							"codeintel_scan_exclude_dir":
+							{
+								"JavaScript":
+								[
+									"/build/",
+									"/min/"
+								]
+							},
+							"codeintel_scan_files_in_project": true,
+							"codeintel_selected_catalogs":
+							[
+								"PyWin32",
+								"jQuery",
+								"Rails"
+							],
+							"codeintel_snippets": true,
+							"codeintel_syntax_map":
+							{
+								"Python Django": "Python"
+							},
+							"codeintel_tooltips": "popup",
+							"sublime_auto_complete": true,
+							"syntax": "Packages/PHP/PHP.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 11,
+					"file": "GUI/showLocalImg.php",
+					"settings":
+					{
+						"buffer_size": 436,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								177,
+								6
+							]
+						],
+						"settings":
+						{
+							"codeintel": true,
+							"codeintel_config":
+							{
+								"JavaScript":
+								{
+									"codeintel_max_recursive_dir_depth": 2,
+									"codeintel_scan_files_in_project": false,
+									"javascriptExtraPaths":
+									[
+									]
+								},
+								"PHP":
+								{
+									"codeintel_max_recursive_dir_depth": 5,
+									"codeintel_scan_files_in_project": false,
+									"phpExtraPaths":
+									[
+									]
+								},
+								"Python":
+								{
+									"env":
+									{
+									}
+								}
+							},
+							"codeintel_enabled_languages":
+							[
+								"JavaScript",
+								"Mason",
+								"XBL",
+								"XUL",
+								"RHTML",
+								"SCSS",
+								"Python",
+								"HTML",
+								"Ruby",
+								"Python3",
+								"XML",
+								"Sass",
+								"XSLT",
+								"Django",
+								"HTML5",
+								"Perl",
+								"CSS",
+								"Twig",
+								"Less",
+								"Smarty",
+								"Node.js",
+								"Tcl",
+								"TemplateToolkit",
+								"PHP"
+							],
+							"codeintel_live": true,
+							"codeintel_live_enabled_languages":
+							[
+								"JavaScript",
+								"Mason",
+								"XBL",
+								"XUL",
+								"RHTML",
+								"SCSS",
+								"Python",
+								"HTML",
+								"Ruby",
+								"Python3",
+								"XML",
+								"Sass",
+								"XSLT",
+								"Django",
+								"HTML5",
+								"Perl",
+								"CSS",
+								"Twig",
+								"Less",
+								"Smarty",
+								"Node.js",
+								"Tcl",
+								"TemplateToolkit",
+								"PHP"
+							],
+							"codeintel_max_recursive_dir_depth": 10,
+							"codeintel_scan_exclude_dir":
+							{
+								"JavaScript":
+								[
+									"/build/",
+									"/min/"
+								]
+							},
+							"codeintel_scan_files_in_project": true,
+							"codeintel_selected_catalogs":
+							[
+								"PyWin32",
+								"jQuery",
+								"Rails"
+							],
+							"codeintel_snippets": true,
+							"codeintel_syntax_map":
+							{
+								"Python Django": "Python"
+							},
+							"codeintel_tooltips": "popup",
+							"sublime_auto_complete": true,
+							"syntax": "Packages/PHP/PHP.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 12,
 					"file": "class/CalibreDatabaseObject.php",
 					"settings":
 					{
@@ -1458,19 +2169,19 @@
 					"type": "text"
 				},
 				{
-					"buffer": 8,
+					"buffer": 13,
 					"file": "class/Publishers.php",
 					"settings":
 					{
-						"buffer_size": 533,
+						"buffer_size": 547,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								520,
-								520
+								364,
+								364
 							]
 						],
 						"settings":
@@ -1589,19 +2300,19 @@
 					"type": "text"
 				},
 				{
-					"buffer": 9,
+					"buffer": 14,
 					"file": "class/Tags.php",
 					"settings":
 					{
-						"buffer_size": 503,
+						"buffer_size": 517,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								490,
-								490
+								340,
+								340
 							]
 						],
 						"settings":
@@ -1720,7 +2431,7 @@
 					"type": "text"
 				},
 				{
-					"buffer": 10,
+					"buffer": 15,
 					"file": "class/Publisher.php",
 					"settings":
 					{
@@ -1850,7 +2561,7 @@
 					"type": "text"
 				},
 				{
-					"buffer": 11,
+					"buffer": 16,
 					"file": "class/Serie.php",
 					"settings":
 					{
@@ -1980,19 +2691,19 @@
 					"type": "text"
 				},
 				{
-					"buffer": 12,
+					"buffer": 17,
 					"file": "class/utilsFunctions.php",
 					"settings":
 					{
-						"buffer_size": 416,
+						"buffer_size": 1976,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								416,
-								416
+								1534,
+								1552
 							]
 						],
 						"settings":
@@ -2111,19 +2822,19 @@
 					"type": "text"
 				},
 				{
-					"buffer": 13,
+					"buffer": 18,
 					"file": "class/Collections.php",
 					"settings":
 					{
-						"buffer_size": 1973,
+						"buffer_size": 2446,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								786,
-								806
+								2389,
+								2389
 							]
 						],
 						"settings":
@@ -2236,25 +2947,25 @@
 							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 882.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
 				},
 				{
-					"buffer": 14,
+					"buffer": 19,
 					"file": "class/Series.php",
 					"settings":
 					{
-						"buffer_size": 512,
+						"buffer_size": 526,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								499,
-								499
+								347,
+								347
 							]
 						],
 						"settings":

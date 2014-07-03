@@ -15,7 +15,7 @@ class Publishers extends Collections{
 	 */
 	public function loadFromDatabase($calibreDatabasePath){
 
-		$sqlQuery = 'SELECT * FROM publishers';
+		$sqlQuery = 'SELECT * FROM publishers ORDER BY name';
 
 		$pdo = new SPDO($calibreDatabasePath);
 		foreach  ($pdo->query($sqlQuery) as $row)

@@ -1,6 +1,7 @@
 ## PHPCalibre
 
-PHP calibre is a Viewer for [Calibre Ebooks libraries](http://calibre-ebook.com/ "Calibre Ebook")
+PHPcalibre is a Viewer for [Calibre Ebooks libraries](http://calibre-ebook.com/ "Calibre Ebook").
 
-### Installation
+## Roadmap
+Now I dev a base object for this project. Nothings are usable yet.
 

@@ -15,7 +15,7 @@ class Series extends Collections{
 	 */
 	public function loadFromDatabase($calibreDatabasePath){
 
-		$sqlQuery = 'SELECT * FROM series';
+		$sqlQuery = 'SELECT * FROM series ORDER BY name';
 
 		$pdo = new SPDO($calibreDatabasePath);
 		foreach  ($pdo->query($sqlQuery) as $row)

@@ -15,7 +15,7 @@ class Tags extends Collections{
 	 */
 	public function loadFromDatabase($calibreDatabasePath){
 
-		$sqlQuery = 'SELECT * FROM tags';
+		$sqlQuery = 'SELECT * FROM tags ORDER BY name';
 
 		$pdo = new SPDO($calibreDatabasePath);
 		foreach  ($pdo->query($sqlQuery) as $row)

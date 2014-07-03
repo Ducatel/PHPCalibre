@@ -6,7 +6,7 @@ require_once("utilsFunctions.php");
  * This is a superclass of all Calibre object connexion
  * @author D.Ducatel
  */
-abstract class Collections implements Iterator{
+abstract class Collections implements Iterator, Countable {
 
 
 	/**
@@ -25,6 +25,14 @@ abstract class Collections implements Iterator{
 	public function __construct() {
 		$this->listOfObjects = array();
 		$this->iteratorCurrentPos = 0;
+	}
+
+	/**
+	 * Add an object in this collection
+	 * @param $obj The object you want to add in this collection
+	 */
+	public function add($obj){
+		$this->listOfObjects[] = $obj;
 	}
 	
 	/**
@@ -50,6 +58,7 @@ abstract class Collections implements Iterator{
 
 		return $arrayOfMatchedObject;
 	}
+
 
 	/**
 	 * Load all object in Calibre sqlite database
@@ -95,6 +104,14 @@ abstract class Collections implements Iterator{
 	public function valid() {
 		return $this->iteratorCurrentPos < count($this->listOfObjects);
 	}
+
+	/*****************************************************************/
+	/**                   COUNTABLE IMPLEMENTATION                  **/
+	/*****************************************************************/
+
+	public function count() {
+        return count($this->listOfObjects);
+    }
 
 }
 
